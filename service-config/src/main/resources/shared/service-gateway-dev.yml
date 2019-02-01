@@ -1,0 +1,26 @@
+# service gateway develop config
+server:
+  port: 1100
+zuul: 
+  ignoredServices: '*' #忽略所有未配置的service
+  host:
+    connect-timeout-millis: 20000
+    socket-timeout-millis: 20000
+  routes:
+    user-service: #自定义名称
+      path: /api/**
+      serviceId: user-service #/api/开头的路径转发至user-service微服务
+hystrix: #hystrix配置
+  command:
+    default:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 2500 
+ribbon: #ribbon负载均衡参数配置
+  ReadTimeout: 5000
+  ConnectTimeout: 5000
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/

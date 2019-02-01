@@ -1,0 +1,10 @@
+spring:
+  application: 
+    name: user-service
+  cloud: 
+    config: 
+      discovery: 
+        enabled: true
+        service-id: service-config
+      profile: dev
+      label: master
