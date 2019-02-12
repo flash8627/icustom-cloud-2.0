@@ -1,8 +1,11 @@
 # icustom-cloud-2.0
 
-#基础测试：
+#测试：
 启动Eureka注册中心
-测试地址：http://localhost:8761/
+服务注册测试地址：http://localhost:8761/
+
+服务注册XML数据预览地址：
+http://localhost:8761/eureka/apps/?
 
 启动 server-config
 
@@ -11,7 +14,7 @@
 
 
 #路由测试  
-依次运行eureka server -- server config -- user-service(启动两个不同端口) -- service-gateway(ribbon) 
+依次运行eureka server -- server config -- user-service(启动两个不同端口) -- service-gateway(zuul+ribbon) 
 
 测试地址：http://localhost:1100/api/user/list
 

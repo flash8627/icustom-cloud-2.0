@@ -1,9 +1,12 @@
 # service-zuul-session-redis
 
-# *[1、springboot+zuul实现session共享]
-# *[2、zuul实现动态配置]
+# *[1、zuul实现session共享]
+# *[2、zuul使用redis保存路由配置]
+# *[3、zuul实现动态路由配置]
+# *[4、zuul可以使用接口刷新路由配置]
+# *[5、断路器]
+# *[6、实现swagger 使用zuul路由动态加载]
 
-<h2 id="session">+zuul实现session共享 zuul动态路由</h2>
 
 # 1、说明
 springsession+redis+springboot使用上一个repository就可以了。我们这里关注zuul的配置。
