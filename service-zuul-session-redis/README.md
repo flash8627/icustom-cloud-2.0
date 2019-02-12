@@ -1,4 +1,4 @@
-# springboot-zuul-session-redis
+# service-zuul-session-redis
 
 # *[1、springboot+zuul实现session共享]
 # *[2、zuul实现动态配置]
@@ -13,7 +13,8 @@ springsession+redis+springboot使用上一个repository就可以了。我们这�
 
 # 3 实现刷新接口，同时通过事件发送刷新方法
 
-通过调用:http://localhost:8000/routes/接口,添加配置信息我们就可以看到相关配置
+通过调用:http://localhost:1100/getAllRoutes/  接口,添加配置信息我们就可以看到相关配置
+
 
 ```
 
