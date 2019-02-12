@@ -15,6 +15,7 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<artifactId>service-gateway</artifactId>
 	<name>service-gateway</name>
+	<description>zuul路由中心，含ribbon、netflix、hystrix</description>
 
 	<properties>
 		<java.version>1.8</java.version>
@@ -105,5 +106,4 @@
 		Milestones</name> <url>https://repo.spring.io/milestone</url> </repository> 
 		</repositories> -->
 
-	<description>用户中心服务调用者ribbon</description>
 </project>

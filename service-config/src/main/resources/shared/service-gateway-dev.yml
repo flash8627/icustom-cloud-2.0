@@ -21,6 +21,7 @@ ribbon: #ribbon负载均衡参数配置
   ConnectTimeout: 5000
 server:
   port: 1100
+  version: 1.0
 eureka:
   client:
     serviceUrl:
