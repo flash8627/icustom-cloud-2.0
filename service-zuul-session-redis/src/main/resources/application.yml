@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: service-gateway
+  redis:
+    host: 192.168.23.100
+    port: 6379
+    password: 123456
+  cloud: 
+    config: 
+      discovery: 
+        enabled: true
+        service-id: service-config
+      profile: dev
+      label: master
