@@ -22,7 +22,7 @@ public class UserManagementController {
 	String serverPort;
 
 	@GetMapping("/user/list")
-	public String ListUsers() {
+	public String getListUsers() {
 
 		/**
 		 * 模拟从数据库查询
