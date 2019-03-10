@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.gwtjs.icustom.security.dao.ISysUserDao">
+	
+	<delete id="delete">
+		UPDATE SYS_USER_T t SET t.valid_flag = 2 WHERE t.user_id = #{id,jdbcType=VARCHAR}
+	</delete>
+	
+	<update id="updatePwd">
+		UPDATE sys_user_t tar
+					SET tar.password = #{password,jdbcType=VARCHAR}
+		      WHERE tar.user_id = #{id,jdbcType=VARCHAR}
+		            OR tar.user_account = #{account,jdbcType=VARCHAR}
+	</update>
+	
+	<update id="saveOrUpdate">
+		begin 
+			<foreach collection='users' item="item" index="index">
+	        merge into sys_user_t tar
+	          using (
+	                select 
+	                     #{item.id,jdbcType=VARCHAR}			USER_ID,
+	                     #{item.account,jdbcType=VARCHAR}			USER_ACCOUNT,
+	                     #{item.email,jdbcType=VARCHAR}				EMAIL,
+	                     #{item.password,jdbcType=VARCHAR}			PASSWORD,
+	                     #{item.username,jdbcType=VARCHAR}			USER_NAME,
+	                     #{item.remark,jdbcType=VARCHAR}			remark,
+	                     #{item.orderCode,jdbcType=VARCHAR}			ORDER_CODE,
+	                     #{item.createdUser,jdbcType=VARCHAR}		CREATED_USER,
+	                     SYSDATE									created_date,
+	                     #{item.updateLastUser,jdbcType=NUMERIC}			update_last_user,
+	                     SYSDATE									update_last_date,
+	                     #{item.validFlag,jdbcType=INTEGER}			valid_flag
+		           from dual) src
+		  on (
+		  	tar.USER_ACCOUNT = src.USER_ACCOUNT
+		  )
+		  WHEN MATCHED THEN
+		    UPDATE
+		       SET tar.EMAIL            = src.email,
+		           tar.remark           = src.remark,
+		           tar.USER_NAME        = src.USER_NAME,
+		           tar.ORDER_CODE       = src.ORDER_CODE,
+		           tar.update_last_user = src.update_last_user,
+		           tar.update_last_date = src.update_last_date,
+		           tar.valid_flag       = nvl(src.valid_flag, tar.valid_flag)
+		  WHEN NOT MATCHED THEN
+		    INSERT
+		      (USER_ID,
+		       USER_ACCOUNT,
+		       EMAIL,
+		       PASSWORD,
+		       USER_NAME,
+		       remark,
+		       order_code,
+		       created_user,
+		       created_date,
+		       update_last_user,
+		       update_last_date,
+		       valid_flag)
+		    VALUES
+		      (SYS_USER_S.nextval + 1000,
+		       src.USER_ACCOUNT,
+		       src.EMAIL,
+		       src.PASSWORD,
+		       src.USER_NAME,
+		       src.remark,
+		       src.ORDER_CODE,
+		       src.created_user,
+		       SYSDATE,
+		       src.update_last_user,
+		       SYSDATE,
+		       1);
+	      </foreach>
+	    END;
+	</update>
+	
+	<select id="findUser" resultType="com.gwtjs.icustom.security.entity.SysUserVO">
+		<include refid="Base_Column_List" />
+		AND su.USER_ID=#{id,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="findUserPage" resultType="com.gwtjs.icustom.security.entity.SysUserVO">
+		<include refid="page_st" />
+			<include refid="Base_Column_List" />
+			<include refid="select_cond" />
+		<include refid="page_et" />
+	</select>
+	
+	<select id="findUserPageCount" resultType="int">
+		SELECT count(*)
+	  FROM sys_user_t su
+	 WHERE su.VALID_FLAG = 1 
+	 <include refid="select_cond" />
+	</select>
+	
+	<select id="findByUsername" resultType="com.gwtjs.icustom.security.entity.SysUserVO">
+		<include refid="Base_Column_List" /> 
+		 AND upper(su.USER_NAME)=upper(#{username,jdbcType=VARCHAR})
+	</select>
+	
+	<select id="findByAccount" resultType="com.gwtjs.icustom.security.entity.SysUserVO">
+		<include refid="Base_Column_List" /> 
+		 AND upper(su.USER_ACCOUNT)=upper(#{account,jdbcType=VARCHAR})
+	</select>
+	
+	<sql id="select_cond">
+		<if test='_parameter.get("user").account != null and _parameter.get("user").account != "" and _parameter.get("user").account != "null"'>
+			AND upper(su.account) = upper(#{user.account,jdbcType=VARCHAR}) 
+		</if>
+		<if test='_parameter.get("user").username != null and _parameter.get("user").username != "" and _parameter.get("user").username != "null"'>
+			AND upper(su.username) = upper(#{user.username,jdbcType=VARCHAR}) 
+		</if>
+		<if test='_parameter.get("user").username != null and _parameter.get("user").username != "" and _parameter.get("user").username != "null"'>
+			AND upper(su.username) = upper(#{user.username,jdbcType=VARCHAR}) 
+		</if>
+	</sql>
+		
+	<sql id="Base_Column_List">
+		SELECT USER_ID              id,
+			USER_ACCOUNT			account,
+			EMAIL					email,
+			USER_NAME				username,
+			PASSWORD				password,
+			remark					remark,
+			ORDER_CODE           	orderCode,
+			CREATED_USER         	createdUser,
+			CREATED_DATE         	createdDate,
+			UPDATE_LAST_USER     	updateLastUser,
+			UPDATE_LAST_DATE     	updateLastDate,
+			VALID_FLAG           	validFlag,
+			EFFECTIVE_DATE_END   	effectiveDateEnd,
+			EFFECTIVE_DATE_START 	effectiveDateStart
+		FROM sys_user_t su
+			WHERE su.VALID_FLAG = 1
+	</sql>
+	
+	<sql id="page_st">
+		SELECT * FROM (
+		SELECT TT.* , ROWNUM RN FROM (
+	</sql>
+	
+	<sql id="page_et">
+		) TT WHERE<![CDATA[ rownum<=#{page.endIndex} ) WHERE rn>=#{page.startIndex} ]]>
+	</sql>
+	
+</mapper>

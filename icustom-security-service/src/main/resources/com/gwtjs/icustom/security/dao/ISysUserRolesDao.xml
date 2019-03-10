@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.gwtjs.icustom.security.dao.ISysUserRolesDao">
+	
+	<select id="findByUserRoles" resultType="com.gwtjs.icustom.security.entity.SysRoleVO">
+		SELECT sr.ROLE_ID          id,
+		       sr.ROLE_NAME        rolename,
+		       sr.ORDER_CODE       orderCode,
+		       sr.CREATED_USER     createdUser,
+		       sr.CREATED_DATE     createdDate,
+		       sr.UPDATE_LAST_USER updateLastUser,
+		       sr.UPDATE_LAST_DATE updateLastDate
+		  FROM sys_role_t sr
+		  join sys_user_roles_t rt
+		    on (sr.role_id = rt.role_id)
+		 WHERE sr.valid_flag = 1 
+		 		and rt.user_id = #{userId,jdbcType=NUMERIC} 
+	</select>
+	
+</mapper>

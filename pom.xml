@@ -12,7 +12,9 @@
 		<module>eureka-server</module>
 		<module>service-config</module>
 		<module>user-service</module>
-		<module>service-gateway</module>
+		<module>icustom-security-service</module>
+		<module>boot.starters</module>
+		<!-- <module>service-gateway</module> -->
 		<module>service-zuul-session-redis</module>
 	</modules>
 	

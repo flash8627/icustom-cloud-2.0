@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- namespace和定义的Mapper接口对应，并实现其中的方法 -->
+<mapper namespace="com.gwtjs.icustom.security.dao.ISysResourcesMgrDao">
+
+	<cache eviction="LRU" flushInterval="60000" size="1024" readOnly="false" />
+	<!-- eviction是缓存的淘汰算法，可选值有"LRU"、"FIFO"、"SOFT"、"WEAK"，缺省值是LRU flashInterval指缓存过期时间，单位为毫秒，60000即为60秒，缺省值为空，即只要容量足够，永不过期 
+		size指缓存多少个对象，默认值为1024 readOnly是否只读，如果为true，则所有相同的sql语句返回的是同一个对象（有助于提高性能，但并发操作同一条数据时，可能不安全），如果设置为false，则相同的sql，后面访问的是cache的clone副本。 -->
+	
+	<!-- 树专用  -->
+	<select id="findAuthResourcesTreeRoot" resultType="com.gwtjs.icustom.security.entity.SysResourceVO">
+		<include refid="auth_resource_tree_col" />
+		 FROM SYS_RESOURCE_T T1 
+		where T1.VALID_FLAG=1 
+				AND parent_id is null
+	</select>
+	
+	<select id="findAuthResourcesTree" resultType="com.gwtjs.icustom.security.entity.SysResourceVO">
+		<include refid="auth_resource_tree_col" />
+		 FROM SYS_RESOURCE_T T1 
+		where T1.VALID_FLAG=1 
+			AND T1.PARENT_ID = #{parentId,jdbcType=NUMERIC}
+		ORDER BY T1.ORDER_CODE ASC 
+	</select>
+	
+	<sql id="auth_resource_tree_col">
+		SELECT 
+		RESOURCE_ID 		 id,
+		RESOURCE_NAME 		 text,
+		RESOURCE_URL			 	resourceUrl,
+		REMARK        resourceDesc,
+		PARENT_ID 		 parentId, 
+		ORDER_CODE orderCode,
+		(nvl((select TU.USER_NAME userName FROM SYS_USER_T TU WHERE TU.USER_ID = to_char(T1.CREATED_USER)),T1.CREATED_USER) ) nameCn,
+		(nvl((select TU.USER_NAME userName FROM SYS_USER_T TU WHERE TU.USER_ID = to_char(T1.UPDATE_LAST_USER)),T1.UPDATE_LAST_USER) ) lastNameCn,
+		(decode((select count(1) FROM SYS_RESOURCE_T TC WHERE TC.PARENT_ID = T1.RESOURCE_ID),0,0,1)) leaf,
+	    (decode((select count(1) FROM SYS_RESOURCE_T TC WHERE TC.PARENT_ID = T1.RESOURCE_ID),0,'', '[]' )) children,
+	    (decode((select count(1) FROM SYS_RESOURCE_T TC WHERE TC.PARENT_ID = T1.RESOURCE_ID),0,'', 'closed' )) state,
+	    CREATED_USER createdUser,
+	    CREATED_DATE createdDate,
+	    UPDATE_LAST_USER updateLastUser,
+	    UPDATE_LAST_DATE updateLastDate
+	</sql>
+	
+	<select id="selectByItemId" resultType="java.lang.Integer">
+		select SYS_RESOURCE_S.NEXTVAL from DUAL
+	</select>
+	
+	<!-- treegrid专用  -->
+	<select id="findResourcesGridTreeRoot" resultType="com.gwtjs.icustom.security.entity.SysResourceVO">
+		<include refid="nav_base_column" />
+		where (parent_id is null or parent_id = 0) and rownum = 1
+	</select>
+	
+	<select id="selectByPrimaryKey" resultType="com.gwtjs.icustom.security.entity.SysResourceVO">
+		<include refid="nav_base_column" />
+		where RESOURCE_ID = #{resourceId,jdbcType=NUMERIC}
+	</select>
+
+	<delete id="deleteByPrimaryKey">
+		delete from SYS_RESOURCE_T where RESOURCE_ID = #{resourceId,jdbcType=NUMERIC}
+	</delete>
+
+	<insert id="insert" parameterType="com.gwtjs.icustom.security.entity.SysResourceVO">
+		insert into SYS_RESOURCE_T
+		(
+		RESOURCE_ID,
+		RESOURCE_NAME,
+		PARENT_ID,
+		ICON,
+		RESOURCE_URL,
+		REMARK, 
+		USE_STATUS,
+		RESOURCE_TYPE,
+		ORDER_CODE,
+		CREATED_USER,
+		CREATED_DATE,
+		UPDATE_LAST_USER,
+		UPDATE_LAST_DATE
+		)
+		values
+		(
+		#{resourceId,jdbcType=NUMERIC},
+		#{resourceName,jdbcType=VARCHAR},
+		#{parentId,jdbcType=NUMERIC},
+		#{icon,jdbcType=VARCHAR},
+		#{resourceUrl,jdbcType=VARCHAR},
+		#{resourceDesc,jdbcType=VARCHAR}, 
+		#{useStatus,jdbcType=INTEGER},
+		#{resourceType,jdbcType=INTEGER},
+		#{orderCode,jdbcType=NUMERIC},
+		#{createdUser,jdbcType=NUMERIC},
+		SYSDATE,
+		#{updateLastUser,jdbcType=NUMERIC},
+		SYSDATE
+		)
+	</insert>
+
+	<update id="updateByPrimaryKey" parameterType="com.gwtjs.icustom.security.entity.SysResourceVO">
+		update
+		SYS_RESOURCE_T
+		set 
+			RESOURCE_NAME = #{resourceName,jdbcType=VARCHAR},
+			PARENT_ID = #{parentId,jdbcType=NUMERIC},
+			ICON = #{icon,jdbcType=VARCHAR},
+			RESOURCE_URL = #{resourceUrl,jdbcType=VARCHAR},
+			RESOURCE_TYPE = #{resourceType,jdbcType=VARCHAR},
+			REMARK = #{resourceDesc,jdbcType=VARCHAR},
+			USE_STATUS = #{useStatus,jdbcType=INTEGER},
+			ORDER_CODE = #{orderCode,jdbcType=NUMERIC},
+			UPDATE_LAST_USER = #{updateLastUser,jdbcType=NUMERIC},
+			UPDATE_LAST_DATE = SYSDATE
+		where
+			RESOURCE_ID = #{resourceId,jdbcType=NUMERIC}
+	</update>
+
+	<delete id="batchRemoveNavigationPks" parameterType="java.util.List">
+		DELETE FROM SYS_RESOURCE_T WHERE RESOURCE_ID in
+		<foreach item="item" index="index" collection="list" open="("
+			separator="," close=")">
+			#{item.resourceId}
+		</foreach>
+	</delete>
+	<!-- add -->
+	<insert id="batchInsert">
+		declare
+		<if test="list!=null and !list.isEmpty()">
+			begin
+			<foreach collection="list" item="item">
+				insert into SYS_RESOURCE_T
+				(
+					RESOURCE_ID,
+					RESOURCE_NAME,
+					PARENT_ID,
+					ICON,
+					RESOURCE_URL,
+					REMARK, 
+					USE_STATUS,
+					RESOURCE_TYPE, 
+					ORDER_CODE,
+					CREATED_USER,
+					CREATED_DATE,
+					UPDATE_LAST_USER,
+					UPDATE_LAST_DATE
+				)
+				values
+				(
+					SYS_RESOURCE_S.NEXTVAL,
+					#{item.resourceName,jdbcType=VARCHAR},
+					#{item.parentId,jdbcType=NUMERIC},
+					#{item.icon,jdbcType=VARCHAR},
+					#{item.resourceUrl,jdbcType=VARCHAR},
+					#{item.resourceDesc,jdbcType=VARCHAR}, 
+					#{item.useStatus,jdbcType=INTEGER},
+					#{item.resourceType,jdbcType=INTEGER}, 
+					#{item.orderCode,jdbcType=NUMERIC},
+					#{item.createdUser,jdbcType=NUMERIC},
+					SYSDATE,
+					#{item.updateLastUser,jdbcType=NUMERIC},
+					SYSDATE
+				);
+			</foreach>
+		</if>
+		end;
+	</insert>
+	
+	<!-- 递归查询 暂时未启用 -->
+	<sql id="nav_tree_column">
+		SELECT 
+			T1.RESOURCE_ID resourceId,
+			T1.RESOURCE_NAME resourceName,
+			T1.PARENT_ID parentId,
+			nvl((select T2.RESOURCE_NAME parentName FROM SYS_RESOURCE_T T2 WHERE RESOURCE_ID =
+			T1.PARENT_ID AND ROWNUM=1),'') parentName,
+			T1.ICON icon,
+			T1.RESOURCE_URL resourceUrl,
+			T1.RESOURCE_TYPE resourceType,
+			T1.REMARK resourceDesc,
+			T1.USE_STATUS useStatus,
+			(decode((select count(1) FROM SYS_RESOURCE_T TC WHERE TC.PARENT_ID =
+			T1.RESOURCE_ID),0,0,1)) leaf,
+			(decode((select count(1) FROM SYS_RESOURCE_T TC WHERE TC.PARENT_ID =
+			T1.RESOURCE_ID),0,'','[]')) children,
+			T1.ORDER_CODE orderCode,
+			T1.CREATED_USER createdUser,
+			T1.CREATED_DATE createdDate,
+			(nvl((select TU.USER_NAME userName FROM SYS_USER_T TU WHERE TU.USER_ID =
+			to_char(T1.CREATED_USER)),T1.CREATED_USER) ) nameCn,
+			T1.UPDATE_LAST_USER updateLastUser,
+			T1.UPDATE_LAST_DATE updateLastDate,
+			(nvl((select TU.USER_NAME userName FROM SYS_USER_T TU WHERE TU.USER_ID =
+			to_char(T1.UPDATE_LAST_USER)),T1.UPDATE_LAST_USER) ) lastNameCn
+		FROM SYS_RESOURCE_T T1
+		START WITH T1.PARENT_ID IS NULL
+		CONNECT BY PRIOR T1.RESOURCE_ID = PARENT_ID
+	</sql>
+	
+	<sql id="nav_base_column">
+		SELECT 
+			T1.RESOURCE_ID resourceId,
+			T1.RESOURCE_NAME resourceName,
+			T1.PARENT_ID parentId,
+			nvl((select T2.RESOURCE_NAME parentName FROM SYS_RESOURCE_T T2 WHERE RESOURCE_ID =
+			T1.PARENT_ID AND ROWNUM=1),'') parentName,
+			T1.ICON icon,
+			T1.RESOURCE_URL resourceUrl,
+			T1.RESOURCE_TYPE resourceType,
+			T1.REMARK resourceDesc,
+			T1.USE_STATUS useStatus,
+			(decode((select count(1) FROM SYS_RESOURCE_T TC WHERE TC.PARENT_ID =
+			T1.RESOURCE_ID),0,0,1)) leaf,
+			(decode((select count(1) FROM SYS_RESOURCE_T TC WHERE TC.PARENT_ID =
+			T1.RESOURCE_ID),0,'','[]')) children,
+			(select count(1) FROM SYS_RESOURCE_T TC WHERE TC.PARENT_ID =
+			T1.RESOURCE_ID) childrenCount,
+			T1.ORDER_CODE orderCode,
+			T1.CREATED_USER createdUser,
+			T1.CREATED_DATE createdDate,
+			(nvl((select TU.USER_NAME userName FROM SYS_USER_T TU WHERE TU.USER_ID =
+			to_char(T1.CREATED_USER)),T1.CREATED_USER) ) nameCn,
+			T1.UPDATE_LAST_USER updateLastUser,
+			T1.UPDATE_LAST_DATE updateLastDate,
+			(nvl((select TU.USER_NAME userName FROM SYS_USER_T TU WHERE TU.USER_ID =
+			to_char(T1.UPDATE_LAST_USER)),T1.UPDATE_LAST_USER) ) lastNameCn
+		FROM SYS_RESOURCE_T T1
+	</sql>
+	
+	<select id="findMenuList" resultType="com.gwtjs.icustom.security.entity.SysResourceVO">
+		<include refid="nav_base_column" />
+		WHERE T1.VALID_FLAG=1 AND T1.USE_STATUS=1 
+		<if test="parentId != null">
+			AND T1.PARENT_ID = #{parentId,jdbcType=NUMERIC}
+		</if>
+		ORDER BY T1.ORDER_CODE ASC
+	</select>
+	
+	<select id="findResourcesList" resultType="com.gwtjs.icustom.security.entity.SysResourceVO">
+		<include refid="nav_base_column" />
+		WHERE 1 = 1
+		<if test="parentId != null">
+			AND T1.PARENT_ID = #{parentId,jdbcType=NUMERIC}
+		</if>
+		ORDER BY T1.ORDER_CODE ASC
+	</select>
+
+</mapper>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.gwtjs.icustom.security.dao.ISysRoleDao">
+	
+	<update id="saveOrUpdate">
+		    begin 
+      <foreach collection='roles' item="item" index="index">
+          merge into sys_role_t tar
+            using (
+                  select 
+                       #{item.id,jdbcType=VARCHAR}		ROLE_ID,
+                       #{item.rolename,jdbcType=VARCHAR}      ROLE_NAME,
+                       #{item.remark,jdbcType=VARCHAR}      remark,
+                       #{item.orderCode,jdbcType=VARCHAR}      ORDER_CODE,
+                       #{item.createdUser,jdbcType=VARCHAR}    CREATED_USER,
+                       SYSDATE                  created_date,
+                       #{item.updateLastUser,jdbcType=NUMERIC}      update_last_user,
+                       SYSDATE                  update_last_date,
+                       #{item.validFlag,jdbcType=INTEGER}      valid_flag
+                  from dual 
+            ) src
+            on (
+               tar.ROLE_NAME=src.ROLE_NAME
+            )
+            WHEN MATCHED THEN
+              UPDATE SET
+                tar.remark = src.remark,
+                tar.ORDER_CODE = src.ORDER_CODE,
+                tar.update_last_user = src.update_last_user,
+                tar.update_last_date = src.update_last_date,
+                tar.valid_flag = nvl(src.valid_flag,tar.valid_flag)
+            WHEN NOT MATCHED THEN
+              INSERT
+                (ROLE_ID,
+                 ROLE_NAME,
+                 remark,
+                 order_code,
+                 created_user,
+                 created_date,
+                 update_last_user,
+                 update_last_date,
+                 valid_flag)
+              VALUES
+                (SYS_USER_S.nextval+1000,
+                 src.ROLE_NAME,
+	               src.remark,
+	               src.ORDER_CODE,
+	               src.created_user,
+	               src.created_date,
+	               src.update_last_user,
+	               src.update_last_date,
+	               1);
+	      </foreach>
+	    END;
+	</update>
+	
+	<select id="findAll" resultType="com.gwtjs.icustom.security.entity.SysRoleVO">
+		<include refid="select_base" />
+	</select>
+	
+	<select id="findByRoleName" resultType="com.gwtjs.icustom.security.entity.SysRoleVO">
+		<include refid="select_base" />
+			AND sr.ROLE_NAME = #{rolename,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="findRolePageCount" resultType="int">
+		SELECT 
+			  COUNT(1)  
+			FROM sys_role_t  sr WHERE sr.valid_flag = 1 
+	</select>
+	
+	<select id="findRolePage" resultType="com.gwtjs.icustom.security.entity.SysRoleVO">
+		<include refid="page_st" />
+			<include refid="select_base" />
+			<include refid="select_cond" />
+		<include refid="page_et" />
+	</select>
+	
+	<sql id="select_base">
+		SELECT
+			ROLE_ID id,
+		  	ROLE_NAME 			rolename,
+		  	ORDER_CODE			orderCode,
+		  	CREATED_USER		createdUser,
+		  	CREATED_DATE		createdDate,
+		  	UPDATE_LAST_USER	updateLastUser,
+		  	UPDATE_LAST_DATE	updateLastDate
+		FROM sys_role_t sr WHERE sr.valid_flag = 1 
+	</sql>
+	
+	<sql id="select_cond">
+		<if test='_parameter.get("vo").remark != null and _parameter.get("vo").remark != "" and _parameter.get("vo").remark != "null"'>
+			AND sr.REMARK LIKE '%#{vo.remark,jdbcType=VARCHAR}%'
+		</if>
+		<if test='_parameter.get("vo").rolename != null and _parameter.get("vo").rolename != "" and _parameter.get("vo").rolename != "null"'>
+			AND upper(sr.ROLE_NAME) = upper(#{vo.rolename,jdbcType=VARCHAR}) 
+		</if>
+	</sql>
+	
+	<sql id="page_st">
+		SELECT * FROM (
+		SELECT TT.* , ROWNUM RN FROM (
+	</sql>
+	<sql id="page_et">
+		) TT WHERE<![CDATA[ rownum<=#{page.endIndex} ) WHERE rn>=#{page.startIndex} ]]>
+	</sql>
+	
+</mapper>

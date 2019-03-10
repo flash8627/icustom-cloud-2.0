@@ -20,7 +20,7 @@ public class UserManagementController {
 
 	@Value("${server.port}")
 	String serverPort;
-
+	
 	@GetMapping("/user/list")
 	public String getListUsers() {
 

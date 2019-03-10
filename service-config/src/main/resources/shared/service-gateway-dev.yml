@@ -7,7 +7,11 @@ zuul:
   routes:
     user-service: #自定义名称
       path: /api/**
-      serviceId: user-service #/api/开头的路径转发至user-service微服务
+      serviceId: user-service #user-service的服务转发至/api/
+      sensitiveHeaders: Cookie,Set-Cookie,Authorization
+    user-service1: #自定义名称
+      path: /login
+      serviceId: user-service #这个配置多余，只是个示例
       sensitiveHeaders: Cookie,Set-Cookie,Authorization
 hystrix: #hystrix配置
   command:
@@ -15,13 +19,17 @@ hystrix: #hystrix配置
       execution:
         isolation:
           thread:
-            timeoutInMilliseconds: 2500 
+            timeoutInMilliseconds: 3500 
 ribbon: #ribbon负载均衡参数配置
   ReadTimeout: 5000
   ConnectTimeout: 5000
+
 server:
   port: 1100
   version: 1.0
+management:
+  security:
+    enabled: false
 eureka:
   client:
     serviceUrl:

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gwtjs.icustom.security.dao.ISysUserRolesMgrDao">
+
+	<select id="findByUserRoles" resultType="com.gwtjs.icustom.security.entity.SysRoleVO">
+		SELECT sr.ROLE_ID          id,
+		       sr.ROLE_NAME        rolename,
+		       sr.ORDER_CODE       orderCode,
+		       sr.CREATED_USER     createdUser,
+		       sr.CREATED_DATE     createdDate,
+		       sr.UPDATE_LAST_USER updateLastUser,
+		       sr.UPDATE_LAST_DATE updateLastDate
+		  FROM sys_role_t sr
+		  join sys_user_roles_t rt
+		    on (sr.role_id = rt.role_id)
+		 WHERE sr.valid_flag = 1 
+		 		and rt.user_id = #{userId,jdbcType=NUMERIC} 
+	</select>
+	
+	<!-- batchUpdate -->
+	<update id="saveOrUpdate">
+		begin
+		<foreach collection='list' item="item" index="index">
+			MERGE INTO SYS_USER_ROLES_T tar 
+			USING (
+				SELECT
+					#{item.id,jdbcType=NUMERIC} UR_ID,
+					#{item.userId,jdbcType=NUMERIC} USER_ID,
+					#{item.roleId,jdbcType=NUMERIC} ROLE_ID,
+					#{item.validFlag,jdbcType=INTEGER} VALID_FLAG,
+					#{item.createdUser,jdbcType=NUMERIC} CREATED_USER,
+					#{item.updateLastUser,jdbcType=NUMERIC} UPDATE_LAST_USER
+				FROM dual
+			) src
+			on (
+				tar.UR_ID=src.UR_ID 
+				OR (tar.USER_ID=src.USER_ID AND tar.ROLE_ID=src.ROLE_ID )
+			)
+			WHEN MATCHED THEN
+			UPDATE SET
+				tar.UPDATE_LAST_DATE = SYSDATE,
+				tar.UPDATE_LAST_USER = src.UPDATE_LAST_USER
+			WHEN NOT MATCHED THEN
+			INSERT
+			(
+				UR_ID,
+				USER_ID ,
+				ROLE_ID ,
+				CREATED_USER ,
+				CREATED_DATE,
+				UPDATE_LAST_USER ,
+				UPDATE_LAST_DATE ,
+				VALID_FLAG
+			)values(
+				SYS_USER_ROLES_S.NEXTVAL,
+				src.USER_ID ,
+				src.ROLE_ID ,
+				src.CREATED_USER,
+				SYSDATE,
+				src.UPDATE_LAST_USER ,
+				SYSDATE ,
+				1
+			);
+		</foreach>
+		null;
+		END;
+	</update>
+	
+	<delete id="batchRemovePks" parameterType="java.util.List">
+		BEGIN
+			DELETE FROM SYS_USER_ROLES_T tt 
+				WHERE 1=1
+				AND ( 1=2
+				<foreach collection='list' item="item">
+					OR tt.UR_ID=#{item.id,jdbcType=NUMERIC}
+				</foreach>
+				);
+			null;
+		end;
+	</delete>
+	
+	<delete id="removeUserRoles" parameterType="java.util.List">
+		BEGIN
+			DELETE FROM SYS_USER_ROLES_T tt 
+				WHERE tt.USER_ID=#{userId,jdbcType=NUMERIC};
+			null;
+		end;
+	</delete>
+	
+</mapper>

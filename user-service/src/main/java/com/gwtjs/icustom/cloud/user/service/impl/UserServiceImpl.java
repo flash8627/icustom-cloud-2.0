@@ -2,20 +2,20 @@ package com.gwtjs.icustom.cloud.user.service.impl;
 
 import org.springframework.stereotype.Service;
 
-import com.gwtjs.icustom.cloud.user.model.User;
+import com.gwtjs.icustom.cloud.user.model.UserVO;
 import com.gwtjs.icustom.cloud.user.service.UserService;
 
 @Service
 public class UserServiceImpl implements UserService {
 
 	@Override
-	public User getUser(String id) {
+	public UserVO getUser(String id) {
 		System.out.println(id + "进入实现类获取数据！");
-		User user = new User();
-		user.setId(id);
-		user.setName("香菇,难受");
-		user.setAge(18);
-		return user;
+		UserVO userVO = new UserVO();
+		userVO.setId(id);
+		userVO.setUsername("香菇,难受");
+		userVO.setAge(18);
+		return userVO;
 	}
 
 	@Override

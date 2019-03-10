@@ -68,7 +68,7 @@
 				<version>1.1.0</version>
 				<configuration>
 					<!-- 注意imageName要符合正则[a-z0-9-_.]的，否则构建不会成功 -->
-					<imageName>service-registry</imageName>
+					<imageName>eureka-server</imageName>
 					<baseImage>java</baseImage>
 					<entryPoint>["java", "-jar", "/${project.build.finalName}.jar"]</entryPoint>
 					<resources>

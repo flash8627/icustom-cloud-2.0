@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.gwtjs.icustom.security.dao.ISysResourceDao">
+	
+	<select id="findResourcesTree" resultType="com.gwtjs.icustom.security.entity.SysResourceVO">
+		<include refid="select_base" />
+		<if test="parentId == null or parentId == '' or parentId == '0'">
+			AND tt.PARENT_ID is null
+		</if>
+		<if test="parentId != null and parentId != '' and parentId != '0'">
+			AND tt.PARENT_ID = #{parentId,jdbcType=NUMERIC}
+		</if>
+		AND tt.MAIN_VIEW_FLAG=1
+		ORDER BY tt.ORDER_CODE ASC 
+	</select>
+	
+	<update id="saveOrUpdate">
+		begin 
+			<foreach collection='list' item="item" index="index">
+				merge into sys_resource_t tar
+				  using (
+				        select 
+				             #{item.resourceId,jdbcType=VARCHAR}				resource_id,
+				             #{item.parentId,jdbcType=VARCHAR}				PARENT_ID,
+				             #{item.methodName,jdbcType=VARCHAR}          		method_name,
+				             #{item.methodPath,jdbcType=VARCHAR}        		method_path,
+				             #{item.remark,jdbcType=VARCHAR}      			remark,
+				             #{item.resourceName,jdbcType=VARCHAR}         		resource_name,
+				             #{item.resourceUrl,jdbcType=VARCHAR}            	resource_url,
+				             #{item.orderCode,jdbcType=INTEGER}             order_code,
+				             #{item.createdUser,jdbcType=NUMERIC}              	created_user,
+				             SYSDATE        								created_date,
+				             #{item.updateLastUser,jdbcType=NUMERIC}           	update_last_user,
+				             SYSDATE        								update_last_date,
+				             #{item.validFlag,jdbcType=INTEGER}             valid_flag
+				        from dual 
+				  ) src
+				  on (
+				     tar.resource_id=src.resource_id
+				     OR tar.resource_url=src.resource_url
+				  )
+				  WHEN MATCHED THEN
+				    UPDATE SET
+				      tar.method_name = src.method_name,
+				      tar.method_path = src.method_path,
+				      tar.remark = src.remark,
+				      tar.PARENT_ID = src.PARENT_ID,
+				      tar.resource_name = src.resource_name,
+				      tar.order_code = src.order_code,
+				      tar.created_user = src.created_user,
+				      tar.created_date = src.created_date,
+				      tar.update_last_user = src.update_last_user,
+				      tar.update_last_date = src.update_last_date,
+				      tar.valid_flag = nvl(src.valid_flag,tar.valid_flag)
+				  WHEN NOT MATCHED THEN
+				    INSERT
+				      (resource_id,
+				      	PARENT_ID,
+				       method_name,
+				       method_path,
+				       remark,
+				       resource_name,
+				       resource_url,
+				       order_code,
+				       created_user,
+				       created_date,
+				       update_last_user,
+				       update_last_date,
+				       valid_flag)
+				    VALUES
+				      (SYS_RESOURCE_S.nextval+1000,
+				       src.PARENT_ID,
+				       src.method_name,
+				       src.method_path,
+				       src.remark,
+				       src.resource_name,
+				       src.resource_url,
+				       src.order_code,
+				       src.created_user,
+				       src.created_date,
+				       src.update_last_user,
+				       src.update_last_date,
+				       1);
+			</foreach>
+		END;
+	</update>
+	
+	<delete id="delete">
+		DELETE
+			FROM sys_resource_t
+			WHERE resource_id = #{id,jdbcType=NUMERIC} 
+	</delete>
+	
+	<select id="findResourcesById" resultType="com.gwtjs.icustom.security.entity.SysResourceVO">
+		SELECT t.method_name     methodName,
+		       t.method_path     methodPath,
+		       t.remark          remark,
+		       t.resource_id     resourceId,
+		       t.PARENT_ID     parentId,
+		       t.resource_name   resourceName,
+		       t.resource_url 	resourceUrl
+		  FROM sys_resource_t t
+		 WHERE t.valid_flag = 1
+				AND (1=2 
+				<foreach collection="list" item="item">
+					OR (
+						t.resource_id = #{item.resourceId}
+					)
+				</foreach>
+			)
+	</select>
+	
+	<select id="findAll" resultType="com.gwtjs.icustom.security.entity.SysResourceVO">
+		<include refid="select_base" />
+	</select>
+	
+	<select id="findResourcePageCount" resultType="int">
+		SELECT
+			  COUNT(1) 
+			FROM sys_resource_t  tt  
+			WHERE  tt.valid_flag = 1 
+			<include refid="select_cond" />
+	</select>
+	
+	<select id="findResourcePage" resultType="com.gwtjs.icustom.security.entity.SysResourceVO">
+		<include refid="page_st" />
+			<include refid="select_base" />
+			<include refid="select_cond" />
+		<include refid="page_et" />
+	</select>
+	
+	<sql id="select_cond">
+		<if test='_parameter.get("vo").methodName != null and _parameter.get("vo").methodName != ""'>
+			AND UPPER(tt.method_name) LIKE UPPER('#{vo.methodName,jdbcType=VARCHAR}') 
+		</if>
+		<if test='_parameter.get("vo").resourceName != null and _parameter.get("vo").resourceName != ""'>
+			AND UPPER(tt.resource_name) LIKE UPPER('#{vo.resourceName,jdbcType=VARCHAR}') 
+		</if>
+		
+		<if test='_parameter.get("vo").resourceUrl != null and _parameter.get("vo").resourceUrl != ""'>
+			AND UPPER(tt.resource_url) LIKE UPPER('#{vo.resourceUrl,jdbcType=VARCHAR}') 
+		</if>
+	</sql>
+	
+	<sql id="select_base">
+		SELECT method_name   methodName,
+	       method_path   methodPath,
+	       remark        remark,
+	       resource_id   resourceId,
+	       parent_id   	parentId,
+	       resource_name resourceName,
+	       resource_url  resourceUrl
+	  FROM sys_resource_t tt
+	 WHERE tt.valid_flag = 1
+	</sql>
+	
+	<sql id="page_st">
+		SELECT * FROM (
+		SELECT TP.* , ROWNUM RN FROM (
+	</sql>
+	<sql id="page_et">
+		) TP
+		<![CDATA[
+		) WHERE RN<=#{page.endIndex} AND RN>=#{page.startIndex}
+		]]>
+	</sql>
+	
+</mapper>

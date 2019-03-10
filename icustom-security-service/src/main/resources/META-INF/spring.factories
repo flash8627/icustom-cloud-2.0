@@ -1,0 +1,2 @@
+#autoconfigure
+#org.springframework.boot.autoconfigure.EnableAutoConfiguration=\com.gwtjs.icustom.security.configuration.SecurityAutoConfiguration

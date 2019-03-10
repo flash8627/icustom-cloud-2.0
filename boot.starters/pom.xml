@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	
+	<parent>
+		<groupId>com.gwtjs.icustom</groupId>
+		<artifactId>icustom-boot</artifactId>
+		<version>0.7.11.8</version>
+		<relativePath>../pom.xml</relativePath><!-- lookup parent from repository -->
+	</parent>
+
+	<artifactId>boot.starters</artifactId>
+	<packaging>pom</packaging>
+	
+	<name>icustom.boot.starters</name>
+	<description>ICustom project for Spring Boot</description>
+
+	<modules>
+		<module>boot.starter</module>
+		<module>boot.starter.cxf</module>
+		<module>boot.starter.mybatis</module>
+		<module>boot.starter.test</module>
+	</modules>
+
+
+</project>

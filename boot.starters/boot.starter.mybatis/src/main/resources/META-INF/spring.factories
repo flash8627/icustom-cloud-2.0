@@ -1,0 +1,4 @@
+#autoconfigure
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.gwtjs.icustom.configuration.MyBatisConfig
+#com.gwtjs.icustom.webservice.autoconfigure.WebServiceAutoConfiguration,\
+#com.gwtjs.icustom.webservice.autoconfigure.SpringMvcAutoConfiguration

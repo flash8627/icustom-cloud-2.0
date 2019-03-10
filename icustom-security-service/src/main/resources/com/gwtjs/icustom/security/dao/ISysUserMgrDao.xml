@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gwtjs.icustom.security.dao.ISysUserMgrDao">
+
+	<!--mybatis ehcache缓存配置 ,以下两个<cache>标签二选一,第一个可以输出日志,第二个不输出日志 -->
+	<!-- <cache type="org.mybatis.caches.ehcache.LoggingEhcache" /> -->
+	<!-- <cache type="org.mybatis.caches.ehcache.EhcacheCache"/> -->
+
+	<!-- 内置缓存 -->
+	<cache eviction="LRU" flushInterval="300000" size="1024"
+		readOnly="false" />
+	<!-- eviction是缓存的淘汰算法，可选值有"LRU"、"FIFO"、"SOFT"、"WEAK"，缺省值是LRU flashInterval指缓存过期时间，单位为毫秒，1000毫秒*60*5即为5分钟，缺省值为空，即只要容量足够，永不过期 
+		size指缓存多少个对象，默认值为1024 readOnly是否只读，如果为true，则所有相同的sql语句返回的是同一个对象（有助于提高性能，但并发操作同一条数据时，可能不安全），如果设置为false，则相同的sql，后面访问的是cache的clone副本。 -->
+
+	<select id="findByUserAccount" resultType="com.gwtjs.icustom.security.entity.SysUserVO">
+		<include refid="Base_Column_List" />
+		AND upper(T1.USER_ACCOUNT) = upper(#{account,jdbcType=VARCHAR})
+	</select>
+
+	<select id="loadUserAuthorities" resultType="string">
+		SELECT
+			A.AUTH_NAME 
+		FROM 
+			SYS_AUTHORITIES_T A, 
+			SYS_ROLES_AUTHORITIES_T B, 
+			SYS_USERS_ROLES_T C, 
+			SYS_USER_T D 
+		WHERE 
+		A.AUTH_ID = B.AUTH_ID 
+		AND B.ROLE_ID = C.ROLE_ID 
+		AND C.USER_ID = D.USER_ID 
+		AND D.VALID_FLAG = 1 
+		AND upper(D.USER_ACCOUNT = upper(#{account,jdbcType=VARCHAR})
+	</select>
+
+	<!-- 按登陆帐号和姓名查找用户　 -->
+	<select id="findByItem" resultType="com.gwtjs.icustom.security.entity.SysUserVO">
+		<include refid="Base_Column_List" />
+		AND upper(T1.USER_ACCOUNT) = upper(#{account,jdbcType=VARCHAR})
+		AND T1.USER_NAME = #{username,jdbcType=NUMERIC}
+	</select>
+	
+	<!-- 按用户主键查找用户 -->
+	<select id="findItem" resultType="com.gwtjs.icustom.security.entity.SysUserVO">
+		<include refid="Base_Column_List" /> AND T1.USER_ID = #{id,jdbcType=NUMERIC}
+	</select>
+
+	<sql id="Base_Column_List">
+		SELECT USER_ID          id,
+		       USER_ACCOUNT     account,
+		       USER_NAME        username,
+		       PASSWORD    password,
+		       remark        remark,
+		       ATTRIBUTE1       attribute1,
+		       ATTRIBUTE2       attribute2,
+		       ATTRIBUTE3       attribute3,
+		       ATTRIBUTE4       attribute4,
+		       ATTRIBUTE5       attribute5,
+		       ATTRIBUTE6       attribute6,
+		       ATTRIBUTE7       attribute7,
+		       ATTRIBUTE8       attribute8,
+		       ATTRIBUTE9       attribute9,
+		       ATTRIBUTE10      attribute10,
+		       VALID_FLAG       validFlag,
+		       EFFECTIVE_DATE_START      validStart,
+		       EFFECTIVE_DATE_END        validEnd,
+		       ORDER_CODE       orderCode,
+		       CREATED_USER     createdUser,
+		       CREATED_DATE     createdDate,
+		       UPDATE_LAST_USER updateLastUser,
+		       UPDATE_LAST_DATE updateLastDate
+		  FROM SYS_USER_T T1
+		 where T1.VALID_FLAG = 1
+	</sql>
+
+	<sql id="page_st">
+		SELECT * FROM (
+		SELECT TT.* , ROWNUM RN FROM (
+	</sql>
+	<sql id="page_et">
+		) TT WHERE<![CDATA[ rownum<=#{page.endIndex} ) WHERE rn>=#{page.startIndex} ]]>
+	</sql>
+	
+	<select id="findUserByPage" resultType="com.gwtjs.icustom.security.entity.SysUserVO">
+		<include refid="page_st" />
+		<include refid="Base_Column_List" />
+		<include refid="select_cond" />
+		ORDER BY USER_ID DESC
+		<!-- <if test="#{page.order != null}"> order by #{page.order} asc </if> -->
+		<include refid="page_et" />
+	</select>
+
+	<select id="findUserByPageCount" resultType="INTEGER">
+		SELECT
+		COUNT(1)
+		FROM SYS_USER_T T1
+		where T1.VALID_FLAG=1
+		<include refid="select_cond" />
+	</select>
+
+	<sql id="select_cond">
+		<if test='_parameter.get("vo").account != null'>
+			AND upper(T1.USER_ACCOUNT) = upper(#{vo.account,jdbcType=VARCHAR})
+		</if>
+		<if test='_parameter.get("vo").username != null'>
+			AND T1.USER_NAME LIKE
+			('%'||#{vo.username,jdbcType=VARCHAR}||'%')
+		</if>
+		<if test='_parameter.get("vo").remark != null'>
+			AND T1.remark LIKE
+			('%'||#{vo.remark,jdbcType=VARCHAR}||'%')
+		</if>
+		<if test='_parameter.get("vo").validStart != null'>
+			AND T1.EFFECTIVE_DATE_START <![CDATA[>=]]>
+			TO_CHAR(#{vo.validStart,jdbcType=DATE},'YYYY-MM-DD HH24:MI:SS')
+		</if>
+		<if test='_parameter.get("vo").validEnd != null'>
+			AND T1.EFFECTIVE_DATE_END <![CDATA[<=]]>
+			TO_CHAR(#{vo.validEnd,jdbcType=DATE},'YYYY-MM-DD HH24:MI:SS')
+		</if>
+
+	</sql>
+
+	<!-- batch action -->
+
+	<delete id="batchRemovePks" parameterType="java.util.List">
+		DELETE FROM SYS_USER_T WHERE USER_ID in
+		<foreach item="item" index="index" collection="list" open="("
+			separator="," close=")">
+			#{item.id}
+		</foreach>
+	</delete>
+
+	<update id="updateUserPwd">
+		UPDATE SYS_USER_T
+		SET
+		PASSWORD=#{item.password,jdbcType=VARCHAR}
+		where USER_ID =
+		#{item.id,jdbcType=NUMERIC}
+		AND upper(T1.USER_ACCOUNT) =
+		upper(#{account,jdbcType=VARCHAR})
+	</update>
+
+	<!-- batchUpdate -->
+	<update id="saveOrUpdate">
+		begin
+		<foreach collection='list' item="item" index="index">
+			MERGE INTO SYS_USER_T tar 
+			USING (
+				SELECT
+					#{item.id,jdbcType=NUMERIC} USER_ID,
+					#{item.account,jdbcType=VARCHAR} USER_ACCOUNT,
+					#{item.username,jdbcType=VARCHAR} USER_NAME,
+					#{item.password,jdbcType=VARCHAR} PASSWORD,
+					#{item.remark,jdbcType=VARCHAR} remark,
+					#{item.email,jdbcType=VARCHAR} EMAIL,
+					#{item.validStart,jdbcType=DATE} EFFECTIVE_DATE_START,
+					#{item.validEnd,jdbcType=DATE} EFFECTIVE_DATE_END,
+					#{item.orderCode,jdbcType=INTEGER} ORDER_CODE,
+					#{item.validFlag,jdbcType=INTEGER} VALID_FLAG,
+					#{item.attribute1,jdbcType=VARCHAR} attribute1,
+					#{item.attribute2,jdbcType=VARCHAR} attribute2,
+					#{item.attribute3,jdbcType=VARCHAR} attribute3,
+					#{item.attribute4,jdbcType=VARCHAR} attribute4,
+					#{item.attribute5,jdbcType=VARCHAR} attribute5,
+					#{item.attribute6,jdbcType=VARCHAR} attribute6,
+					#{item.attribute7,jdbcType=VARCHAR} attribute7,
+					#{item.attribute8,jdbcType=VARCHAR} attribute8,
+					#{item.attribute9,jdbcType=VARCHAR} attribute9,
+					#{item.attribute10,jdbcType=VARCHAR} attribute10,
+					#{item.createdUser,jdbcType=NUMERIC} CREATED_USER,
+					#{item.updateLastUser,jdbcType=NUMERIC} UPDATE_LAST_USER
+				FROM dual
+			) src
+			on (
+				tar.USER_ID=src.USER_ID 
+				OR tar.USER_ACCOUNT=src.USER_ACCOUNT
+			)
+			WHEN MATCHED THEN
+			UPDATE SET
+				tar.USER_NAME = src.USER_NAME,
+				tar.EFFECTIVE_DATE_START = src.EFFECTIVE_DATE_START,
+				tar.EFFECTIVE_DATE_END = src.EFFECTIVE_DATE_END,
+				tar.EMAIL = src.EMAIL,
+				tar.REMARK = src.REMARK,
+				tar.attribute1 = src.attribute1,
+				tar.attribute2 = src.attribute2,
+				tar.attribute3 = src.attribute3,
+				tar.attribute4 = src.attribute4,
+				tar.attribute5 = src.attribute5,
+				tar.attribute6 = src.attribute6,
+				tar.attribute7 = src.attribute7,
+				tar.attribute8 = src.attribute8,
+				tar.attribute9 = src.attribute9,
+				tar.attribute10 = src.attribute10,
+				tar.UPDATE_LAST_DATE = SYSDATE,
+				tar.UPDATE_LAST_USER = src.UPDATE_LAST_USER
+			WHEN NOT MATCHED THEN
+			INSERT
+			(
+				USER_ID ,
+				USER_ACCOUNT ,
+				USER_NAME ,
+				PASSWORD ,
+				EMAIL,
+				remark ,
+				ATTRIBUTE1 ,
+				ATTRIBUTE2 ,
+				ATTRIBUTE3 ,
+				ATTRIBUTE4 ,
+				ATTRIBUTE5 ,
+				ATTRIBUTE6 ,
+				ATTRIBUTE7 ,
+				ATTRIBUTE8 ,
+				ATTRIBUTE9 ,
+				ATTRIBUTE10 ,
+				VALID_FLAG ,
+				EFFECTIVE_DATE_START ,
+				EFFECTIVE_DATE_END ,
+				ORDER_CODE ,
+				CREATED_USER ,
+				CREATED_DATE ,
+				UPDATE_LAST_USER,
+				UPDATE_LAST_DATE
+				)
+				values
+				(
+				SYS_USER_S.NEXTVAL,
+				src.USER_ACCOUNT ,
+				src.USER_NAME ,
+				src.PASSWORD ,
+				src.EMAIL ,
+				src.REMARK ,
+				src.ATTRIBUTE1 ,
+				src.ATTRIBUTE2 ,
+				src.ATTRIBUTE3 ,
+				src.ATTRIBUTE4 ,
+				src.ATTRIBUTE5 ,
+				src.ATTRIBUTE6 ,
+				src.ATTRIBUTE7 ,
+				src.ATTRIBUTE8 ,
+				src.ATTRIBUTE9 ,
+				src.ATTRIBUTE10 ,
+				src.VALID_FLAG ,
+				src.EFFECTIVE_DATE_START ,
+				src.EFFECTIVE_DATE_END ,
+				src.ORDER_CODE ,
+				src.CREATED_USER ,
+				SYSDATE,
+				src.UPDATE_LAST_USER,
+				SYSDATE
+				);
+		</foreach>
+		null;
+		END;
+	</update>
+
+</mapper>

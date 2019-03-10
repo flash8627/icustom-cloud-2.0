@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- namespace和定义的Mapper接口对应，并实现其中的方法 -->
+<mapper namespace="com.gwtjs.icustom.security.dao.ISysRoleResourcesMgrDao">
+
+	<select id="findByRoleResource" resultType="com.gwtjs.icustom.security.entity.SysRoleResourceVO">
+		SELECT t.id              id,
+		       t.role_id         roleId,
+		       rt.role_name      roleName,
+		       t.resource_id     resourceId,
+		       srt.resource_name resourceName
+		  FROM SYS_ROLE_RESOURCE_T t
+		  JOIN SYS_ROLE_T rt
+		    ON (t.role_id = rt.role_id AND rt.valid_flag = 1)
+		  JOIN SYS_RESOURCE_T srt
+		    ON (t.resource_id = srt.resource_id AND srt.valid_flag = 1)
+		 WHERE t.valid_flag = 1
+		   AND t.role_id = #{roleId,jdbcType=NUMERIC}
+	</select>
+	
+	<!-- batchUpdate -->
+	<update id="saveOrUpdate">
+		begin
+		<foreach collection='list' item="item" index="index">
+			MERGE INTO SYS_ROLE_RESOURCE_T tar 
+			USING (
+				SELECT
+					#{item.id,jdbcType=NUMERIC} ID,
+					#{item.roleId,jdbcType=NUMERIC} ROLE_ID,
+					#{item.resourceId,jdbcType=NUMERIC} RESOURCE_ID,
+					#{item.validFlag,jdbcType=INTEGER} VALID_FLAG,
+					#{item.createdUser,jdbcType=NUMERIC} CREATED_USER,
+					#{item.updateLastUser,jdbcType=NUMERIC} UPDATE_LAST_USER
+				FROM dual
+			) src
+			on (
+				tar.ID=src.ID 
+				OR (tar.RESOURCE_ID=src.RESOURCE_ID AND tar.ROLE_ID=src.ROLE_ID )
+			)
+			WHEN MATCHED THEN
+			UPDATE SET
+				tar.UPDATE_LAST_DATE = SYSDATE,
+				tar.UPDATE_LAST_USER = src.UPDATE_LAST_USER
+			WHEN NOT MATCHED THEN
+			INSERT
+			(
+				ID,
+				RESOURCE_ID ,
+				ROLE_ID ,
+				CREATED_USER ,
+				CREATED_DATE,
+				UPDATE_LAST_USER ,
+				UPDATE_LAST_DATE ,
+				VALID_FLAG
+			)values(
+				SYS_ROLE_RESOURCE_S.NEXTVAL,
+				src.RESOURCE_ID,
+				src.ROLE_ID,
+				src.CREATED_USER,
+				SYSDATE,
+				src.UPDATE_LAST_USER ,
+				SYSDATE ,
+				1
+			);
+		</foreach>
+		null;
+		END;
+	</update>
+	
+	<delete id="batchRemovePks" parameterType="java.util.List">
+		BEGIN
+			DELETE FROM SYS_ROLE_RESOURCE_T tt 
+				WHERE 1=1
+				AND ( 1=2
+				<foreach collection='list' item="item">
+					OR tt.ID=#{item.id,jdbcType=NUMERIC}
+				</foreach>
+				);
+			null;
+		end;
+	</delete>
+	
+	<delete id="removeRoleResources" parameterType="java.util.List">
+		BEGIN
+			DELETE FROM SYS_ROLE_RESOURCE_T tt 
+				WHERE tt.ROLE_ID=#{roleId,jdbcType=NUMERIC};
+			null;
+		end;
+	</delete>
+	
+</mapper>
